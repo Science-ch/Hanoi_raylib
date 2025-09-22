@@ -9,6 +9,9 @@
 using namespace std;
 int main(void)
 {
+	close_cmd();
+	game_start();
+	return 0;
     cout<<"1.单人 2.联机"<<endl;
     cin>>choose;
     if(choose==1)

@@ -2,7 +2,7 @@
 
 std::list<int> self_tower[3];             // 自己的塔
 std::list<int> other_tower[3];            // 对方的塔
-int layer;                                // 层数
+int layer = 3;                                // 层数
 int selected_tower = -1;                  // 当前选择的塔
 int selected_tower2 = -1;                 // 对方选择的塔
 int self[2];                              // 自己的状态

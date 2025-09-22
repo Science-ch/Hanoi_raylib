@@ -227,3 +227,51 @@ void handle_input() {
         }    
     }
 }
+
+
+void game_start()
+{
+    InitWindow(640, 800, "Hanoi Game");
+    SetTraceLogLevel(LOG_WARNING);
+    SetTargetFPS(60);
+    int fileSize;
+    unsigned char *fontFileData = LoadFileData("c:\\windows\\fonts\\simhei.ttf",&fileSize);
+    while (!WindowShouldClose())
+    {
+        char text[] = "单人多人设置层数： 0123456789";
+        int codepointsCount;
+        int *codepoints=LoadCodepoints(text,&codepointsCount);
+        Font font = LoadFontFromMemory(".ttf",fontFileData,fileSize,32,codepoints,codepointsCount);
+        UnloadCodepoints(codepoints);
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        DrawRectangleRounded(Rectangle{150, 50, 100, 50}, 0.5f, 20, is_multiplayer? LIGHTGRAY : GREEN);
+        DrawRectangleRounded(Rectangle{390, 50, 100, 50}, 0.5f, 20, is_multiplayer? GREEN : LIGHTGRAY);
+        DrawTextEx(font,"单人",Vector2{168,60},32,0,BLACK);
+        DrawTextEx(font,"多人",Vector2{408,60},32,0,BLACK);
+        DrawTextEx(font,"设置层数：",Vector2{100,150},32,0,BLACK);
+        DrawTextEx(font, std::to_string(layer).c_str(), Vector2{250, 150}, 32, 0, BLACK);
+        EndDrawing();
+        Vector2 mousePoint = GetMousePosition();
+        if (mousePoint.x >= 250 && mousePoint.x <= 282 && mousePoint.y >= 150 && mousePoint.y <= 182)
+        {
+            SetMouseCursor(MOUSE_CURSOR_IBEAM);
+            int key=GetKeyPressed();
+            if (key >= KEY_KP_1 && key <= KEY_KP_9)
+                layer = key - KEY_KP_0;
+            else if (key >= KEY_ONE && key <= KEY_NINE)
+                layer = key - KEY_ZERO;
+        }
+        else
+            SetMouseCursor(MOUSE_CURSOR_DEFAULT);
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            if (mousePoint.x >= 150 && mousePoint.x <= 250 && mousePoint.y >= 50 && mousePoint.y <= 100)
+                is_multiplayer = 0;
+            else if (mousePoint.x >= 390 && mousePoint.x <= 490 && mousePoint.y >= 50 && mousePoint.y <= 100)
+                is_multiplayer = 1;
+        }        
+        UnloadFont(font);
+    }
+    UnloadFileData(fontFileData);
+}
