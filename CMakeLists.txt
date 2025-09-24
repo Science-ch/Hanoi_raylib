@@ -4,6 +4,7 @@ project(Hanoi C CXX)
 set(CMAKE_CXX_STANDARD 11)
 
 set(RAYLIB_INCLUDE_DIR D:/Libraries/Windows/raylib-5.5_win64_mingw-w64/include)
+set(RAYGUI_INCLUDE_DIR D:/Libraries/Windows/raygui/src)
 set(RAYLIB_LIBRARY D:/Libraries/Windows/raylib-5.5_win64_mingw-w64/lib/libraylib.a)
 
 file(GLOB CPP_SOURCES "src/*.cpp")
@@ -11,7 +12,7 @@ file(GLOB CPP_SOURCES "src/*.cpp")
 add_executable(Hanoi ${C_SOURCES} ${CPP_SOURCES})
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
-target_include_directories(Hanoi PRIVATE ${RAYLIB_INCLUDE_DIR})
+target_include_directories(Hanoi PRIVATE ${RAYLIB_INCLUDE_DIR} ${RAYGUI_INCLUDE_DIR})
 
 target_link_libraries(Hanoi PRIVATE
   ${RAYLIB_LIBRARY}
@@ -24,7 +25,7 @@ set_target_properties(Hanoi PROPERTIES
 
 if(WIN32)
   set_target_properties(Hanoi PROPERTIES
-    WIN32_EXECUTABLE FALSE  # 这不是 Win32 应用程序
-    LINK_FLAGS "-static"    # 静态链接以减少依赖
+    WIN32_EXECUTABLE FALSE
+    LINK_FLAGS "-static"
   )
 endif()

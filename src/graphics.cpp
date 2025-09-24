@@ -3,8 +3,10 @@
 #include "gamestate.h"
 #include <string.h>
 #include <iostream>
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
 
-double time_mark2;
+void validate_ipv4(char str[16]);
 
 // 初始化塔 
 void init_tower(int layer)
@@ -118,17 +120,27 @@ void print_tower()
                 n++;
             }
             sprintf( str, "Step:%4d", count2);
-            DrawText( str, 250 + 700, 700, 20, GRAY);
+            DrawText( str, 230 + 700, 680, 32, GRAY);
         }
     }
     
     // 绘制选中的塔的标记
     if (selected_tower > -1) 
     {
+        if(!first_press)
+        {
+            first_press=1;
+            time_mark = GetTime();
+        }
         DrawRectangleLines(15 + selected_tower * 200, 100, 150, 350, RED);
     }
     if (selected_tower2 > -1 && is_multiplayer) 
     {
+        if(!first_press)
+        {
+            first_press=1;
+            time_mark = GetTime();
+        }
         DrawRectangleLines(715 + selected_tower2 * 200, 100, 150, 350, RED);
     }
     
@@ -140,11 +152,11 @@ void print_tower()
 
     // 绘制计步器和计时器
     sprintf( str, "Step:%4d", count);
-    DrawText( str, 250, 700, 20, GRAY);
-    if (game_running)
+    DrawText( str, 230, 680, 32, GRAY);
+    if (game_running && first_press)
         time_mark2 = GetTime();
     sprintf( str, "Time:%.2fs", time_mark2 - time_mark);
-    DrawText( str, 10, 780, 20, GOLD);
+    DrawText( str, 10, 750, 32, GOLD);
     
 
     // 根据游戏状态更新窗口标题
@@ -152,14 +164,14 @@ void print_tower()
     {
         if (is_multiplayer)
         {
-            if (choose == 1) 
+            if (is_server == 1) 
             {
                 if (game_won == 1)
                     SetWindowTitle("Hanoi Game (Server) - You Win! Press R to Restart");
                 else if (game_won == 2) 
                     SetWindowTitle("Hanoi Game (Server) - Game Over! Press R to Restart");
             }
-            else if (choose == 2)
+            else if (is_server == 2)
             {
                 if (game_won == 1)
                     SetWindowTitle("Hanoi Game (Client) - You Win! Wating for Restart...");
@@ -174,9 +186,9 @@ void print_tower()
     {
         if (is_multiplayer)
         {
-            if (choose == 1) 
+            if (is_server == 1) 
                 SetWindowTitle("Hanoi Game (Server)");
-            else if (choose == 2)
+            else if (is_server == 2)
                 SetWindowTitle("Hanoi Game (Client)");
         }
         else
@@ -213,7 +225,7 @@ void handle_input() {
     }
     if (game_running == 0)
     {
-        if (key == KEY_R && choose == 1) 
+        if (key == KEY_R && is_server == 1) 
         {
             if (is_multiplayer)
             {
@@ -223,7 +235,7 @@ void handle_input() {
             }
             init_tower(layer);
             game_running = 1;
-            time_mark = GetTime();
+            time_mark2 = time_mark;
         }    
     }
 }
@@ -234,44 +246,180 @@ void game_start()
     InitWindow(640, 800, "Hanoi Game");
     SetTraceLogLevel(LOG_WARNING);
     SetTargetFPS(60);
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 32);
     int fileSize;
+    bool spinnerEditMode = false;
+    char textBoxText[16] = "";
+    bool textBoxEditMode = false;
+    bool valueBoxEditMode = false;
     unsigned char *fontFileData = LoadFileData("c:\\windows\\fonts\\simhei.ttf",&fileSize);
+    char text[] = "单人多人设置层数开始游戏地址服务器客户端口号： 0123456789IP";
+    int codepointsCount;
+    int *codepoints=LoadCodepoints(text,&codepointsCount);
+    Font font = LoadFontFromMemory(".ttf",fontFileData,fileSize,32,codepoints,codepointsCount);
+    UnloadCodepoints(codepoints);
     while (!WindowShouldClose())
     {
-        char text[] = "单人多人设置层数： 0123456789";
-        int codepointsCount;
-        int *codepoints=LoadCodepoints(text,&codepointsCount);
-        Font font = LoadFontFromMemory(".ttf",fontFileData,fileSize,32,codepoints,codepointsCount);
-        UnloadCodepoints(codepoints);
         BeginDrawing();
         ClearBackground(RAYWHITE);
         DrawRectangleRounded(Rectangle{150, 50, 100, 50}, 0.5f, 20, is_multiplayer? LIGHTGRAY : GREEN);
         DrawRectangleRounded(Rectangle{390, 50, 100, 50}, 0.5f, 20, is_multiplayer? GREEN : LIGHTGRAY);
+        DrawRectangleRounded(Rectangle{220, 600, 200, 50}, 0.5f, 20, GREEN);
         DrawTextEx(font,"单人",Vector2{168,60},32,0,BLACK);
         DrawTextEx(font,"多人",Vector2{408,60},32,0,BLACK);
-        DrawTextEx(font,"设置层数：",Vector2{100,150},32,0,BLACK);
-        DrawTextEx(font, std::to_string(layer).c_str(), Vector2{250, 150}, 32, 0, BLACK);
+        DrawTextEx(font,"开始游戏",Vector2{250,610},32,0,BLACK);
+        if (!is_multiplayer)
+        {
+            DrawTextEx(font,"设置层数：",Vector2{100,150},32,0,BLACK);
+            if (GuiSpinner((Rectangle){ 250, 150, 100, 40 }, NULL, &layer, 1, 9, spinnerEditMode)) {
+                spinnerEditMode = !spinnerEditMode;
+            }
+        }
+        if (is_multiplayer)
+        {
+            DrawRectangleRounded(Rectangle{150, 230, 130, 40}, 0.5f, 20, is_server==1? GREEN : LIGHTGRAY);
+            DrawRectangleRounded(Rectangle{360, 230, 130, 40}, 0.5f, 20, is_server==2? GREEN : LIGHTGRAY);
+            DrawTextEx(font,"服务器",Vector2{165,235},32,0,BLACK);
+            DrawTextEx(font,"客户端",Vector2{375,235},32,0,BLACK);
+            if (is_server==1)
+            {
+                DrawTextEx(font,"设置层数：",Vector2{100,150},32,0,BLACK);
+                if (GuiSpinner((Rectangle){ 250, 150, 100, 40 }, NULL, &layer, 1, 9, spinnerEditMode)) {
+                    spinnerEditMode = !spinnerEditMode;
+                }
+                DrawTextEx(font,"端口号：",Vector2{100,330},32,0,BLACK);
+                if (GuiValueBox((Rectangle){ 230, 330, 130, 40 }, NULL, &port, 1,65535, valueBoxEditMode)) {
+                    valueBoxEditMode = !valueBoxEditMode;
+                }
+            }
+            else if(is_server==2)
+            {
+                DrawTextEx(font,"IP地址：",Vector2{100,330},32,0,BLACK);
+                if (GuiTextBox((Rectangle){ 230, 330, 270, 40 }, textBoxText, 16, textBoxEditMode)) {
+                    textBoxEditMode = !textBoxEditMode;
+                    if(!textBoxEditMode)validate_ipv4(textBoxText);
+                }
+                DrawTextEx(font,"端口号：",Vector2{100,430},32,0,BLACK);
+                if (GuiValueBox((Rectangle){ 230, 430, 130, 40 }, NULL, &port, 1,65535, valueBoxEditMode)) {
+                    valueBoxEditMode = !valueBoxEditMode;
+                }
+            }
+            
+            
+        }
+        
         EndDrawing();
         Vector2 mousePoint = GetMousePosition();
-        if (mousePoint.x >= 250 && mousePoint.x <= 282 && mousePoint.y >= 150 && mousePoint.y <= 182)
-        {
-            SetMouseCursor(MOUSE_CURSOR_IBEAM);
-            int key=GetKeyPressed();
-            if (key >= KEY_KP_1 && key <= KEY_KP_9)
-                layer = key - KEY_KP_0;
-            else if (key >= KEY_ONE && key <= KEY_NINE)
-                layer = key - KEY_ZERO;
-        }
-        else
-            SetMouseCursor(MOUSE_CURSOR_DEFAULT);
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
             if (mousePoint.x >= 150 && mousePoint.x <= 250 && mousePoint.y >= 50 && mousePoint.y <= 100)
                 is_multiplayer = 0;
             else if (mousePoint.x >= 390 && mousePoint.x <= 490 && mousePoint.y >= 50 && mousePoint.y <= 100)
                 is_multiplayer = 1;
+            else if (mousePoint.x >= 220 && mousePoint.x <= 420 && mousePoint.y >= 600 && mousePoint.y <= 650)
+            {
+                UnloadFont(font);
+                UnloadFileData(fontFileData);
+                return;
+            }
+            if (is_multiplayer)
+            {
+                if (mousePoint.x >= 150 && mousePoint.x <= 280 && mousePoint.y >= 230 && mousePoint.y <= 270)
+                    is_server = 1;
+                else if (mousePoint.x >= 360 && mousePoint.x <= 490 && mousePoint.y >= 230 && mousePoint.y <= 270)
+                    is_server = 2;
+            }
+            
         }        
-        UnloadFont(font);
     }
+    UnloadFont(font);
+    UnloadFileData(fontFileData);
+    CloseWindow();
+    exit(0);
+}
+
+void validate_ipv4(char str[16]) 
+{
+    int num, dots = 0;
+    char temp[16];
+    strcpy(temp, str);
+    int dot_count = 0;
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == '.') {
+            dot_count++;
+            if (i == 0 || str[i+1] == '.' || str[i+1] == '\0') {
+                strcpy(str, "invalid");
+                return;
+            }
+        }
+    }
+    
+    if (dot_count != 3) {
+        strcpy(str, "invalid");
+        return;
+    }
+    
+    char *token = strtok(temp, ".");
+    int part_count = 0;
+    
+    while (token != NULL) {
+        part_count++;
+        
+        if (strlen(token) == 0) {
+            strcpy(str, "invalid");
+            return;
+        }
+        
+        for (int i = 0; token[i] != '\0'; i++) {
+            if (!isdigit(token[i])) {
+                strcpy(str, "invalid");
+                return;
+            }
+        }
+        
+        if (strlen(token) > 1 && token[0] == '0') {
+            strcpy(str, "invalid");
+            return;
+        }
+        
+        num = atoi(token);
+        if (num < 0 || num > 255) {
+            strcpy(str, "invalid");
+            return;
+        }
+        
+        token = strtok(NULL, ".");
+    }
+    
+    if (part_count != 4) {
+        strcpy(str, "invalid");
+        return;
+    }
+    
+    ip_address = std::string(str);
+}
+
+void wait_connection()
+{
+    int fileSize;
+    unsigned char *fontFileData = LoadFileData("c:\\windows\\fonts\\simhei.ttf",&fileSize);
+    char text[] = "等待连接. ";
+    int codepointsCount;
+    int *codepoints=LoadCodepoints(text,&codepointsCount);
+    Font font = LoadFontFromMemory(".ttf",fontFileData,fileSize,32,codepoints,codepointsCount);
+    UnloadCodepoints(codepoints);
+    while (!connected)
+    {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        DrawTextEx(font,"等待连接 ...",Vector2{220,350},32,0,BLACK);
+        EndDrawing();
+        if(WindowShouldClose()) 
+        {
+            CloseWindow();
+            exit(0);
+        }
+    }
+    UnloadFont(font);
     UnloadFileData(fontFileData);
 }

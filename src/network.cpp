@@ -283,11 +283,13 @@ void win()
             {
                 game_won = 1; // 自己胜利
                 game_running = 0;
+				first_press = 0;
             }
             if (other[0] == layer || other[1] == layer) 
             {
                 game_won = 2; // 对方胜利
                 game_running = 0;
+				first_press = 0;
             }
 			Sleep(50);
         }   
