@@ -125,7 +125,7 @@ void print_tower()
     }
     
     // 绘制选中的塔的标记
-    if (selected_tower > -1) 
+    if (selected_tower > -1 && game_running) 
     {
         if(!first_press)
         {
@@ -134,7 +134,7 @@ void print_tower()
         }
         DrawRectangleLines(15 + selected_tower * 200, 100, 150, 350, RED);
     }
-    if (selected_tower2 > -1 && is_multiplayer) 
+    if (selected_tower2 > -1 && is_multiplayer && game_running) 
     {
         if(!first_press)
         {
