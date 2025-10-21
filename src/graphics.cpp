@@ -176,7 +176,7 @@ void print_tower()
                 if (game_won == 1)
                     SetWindowTitle("Hanoi Game (Client) - You Win! Wating for Restart...");
                 else if (game_won == 2) 
-                    SetWindowTitle("Hanoi Game (Client) - Game Over! Wating for Restart...");
+                    SetWindowTitle("Hanoi Game (Client) - You Lost! Wating for Restart...");
             }
         }
         else if (game_won == 1) 
