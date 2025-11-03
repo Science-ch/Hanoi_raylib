@@ -5,6 +5,7 @@
 #include <iostream>
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+#include "icon_data.h"
 
 void validate_ipv4(char str[16]);
 
@@ -244,6 +245,9 @@ void handle_input() {
 void game_start()
 {
     InitWindow(640, 800, "Hanoi Game");
+    Image icon = LoadImageFromMemory(".png", Hanoi_png,Hanoi_png_len);
+    SetWindowIcon(icon);
+    UnloadImage(icon);
     SetTraceLogLevel(LOG_WARNING);
     SetTargetFPS(60);
     GuiSetStyle(DEFAULT, TEXT_SIZE, 32);

@@ -1,3 +1,5 @@
+![logo](image/logo.png)
+
 这是一个基于raylib和raygui开发的汉诺塔双人对战游戏。玩家可以选择单人或者通过ip连接与其他玩家进行对战，看谁能更快地完成汉诺塔的移动。
 什么？你不认识汉诺塔？[点我了解](https://baike.baidu.com/item/%E6%B1%89%E8%AF%BA%E5%A1%94/3468295 "汉诺塔")
 
