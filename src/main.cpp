@@ -28,8 +28,24 @@ int main(void)
 		return 0; 
 	}
 	else if(is_multiplayer)
-    {
-		if(is_server==1)
+    {	
+		if(is_server==0)
+		{
+			init_tower(layer);
+			SetWindowSize(1280, 800);
+			SetTargetFPS(60);
+			game_running = 1;
+			thread win_thread(win);
+			win_thread.detach();
+			while (!WindowShouldClose())
+			{
+				handle_input();
+				print_tower();
+			}
+			CloseWindow();
+			return 0; 
+		}
+		else if(is_server==1)
 		{	
 			init_tower(layer);
 			thread server_process(server); 			

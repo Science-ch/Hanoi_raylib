@@ -18,6 +18,7 @@ void init_tower(int layer)
     selected_tower2 = -1;
     game_won = 0;
     selection_state = 0;
+    selection_state2 = 0;
     game_running = 0;
     game_restart = 0;
     self[0] = 0;
@@ -42,25 +43,50 @@ void init_tower(int layer)
 }
 
 // 移动方块
-bool move_block(int a,int b)
+//`tower`:0-自己,1-对方
+bool move_block(int a,int b,int tower)
 {
     if(a<0||a>2||b<0||b>2) return false;
-    else if(self_tower[a].empty()) return false;
-    else if(self_tower[b].empty())
+    if (tower == 0)
     {
-        self_tower[b].push_front(self_tower[a].front());
-        self_tower[a].pop_front();
-        if(b>0)self[b==1?0:1]=self_tower[b].size();
-        return true;
+        if(self_tower[a].empty()) return false;
+        else if(self_tower[b].empty())
+        {
+            self_tower[b].push_front(self_tower[a].front());
+            self_tower[a].pop_front();
+            if(b>0)self[b==1?0:1]=self_tower[b].size();
+            return true;
+        }
+        else if(self_tower[a].front()<self_tower[b].front())
+        {
+            self_tower[b].push_front(self_tower[a].front());
+            self_tower[a].pop_front();
+            if(b>0)self[b==1?0:1]=self_tower[b].size();
+            return true;		
+        }
+        else
+            return false;
     }
-    else if(self_tower[a].front()<self_tower[b].front())
+    else if (tower == 1)
     {
-        self_tower[b].push_front(self_tower[a].front());
-        self_tower[a].pop_front();
-        if(b>0)self[b==1?0:1]=self_tower[b].size();
-        return true;		
+        if(other_tower[a].empty()) return false;
+        else if(other_tower[b].empty())
+        {
+            other_tower[b].push_front(other_tower[a].front());
+            other_tower[a].pop_front();
+            if(b>0)other[b==1?0:1]=other_tower[b].size();
+            return true;
+        }
+        else if(other_tower[a].front()<other_tower[b].front())
+        {
+            other_tower[b].push_front(other_tower[a].front());
+            other_tower[a].pop_front();
+            if(b>0)other[b==1?0:1]=other_tower[b].size();
+            return true;		
+        }
+        else
+            return false;
     }
-    else
     return false;
 }
 
@@ -165,7 +191,14 @@ void print_tower()
     {
         if (is_multiplayer)
         {
-            if (is_server == 1) 
+            if (is_server == 0) 
+            {
+                if (game_won == 1)
+                    SetWindowTitle("Hanoi Game - Game Over! Press R to Restart");
+                else if (game_won == 2) 
+                    SetWindowTitle("Hanoi Game - Game Over! Press R to Restart");
+            }
+            else if (is_server == 1) 
             {
                 if (game_won == 1)
                     SetWindowTitle("Hanoi Game (Server) - You Win! Press R to Restart");
@@ -188,6 +221,8 @@ void print_tower()
         if (is_multiplayer)
         {
             if (is_server == 1) 
+                SetWindowTitle("Hanoi Game");
+            else if (is_server == 1) 
                 SetWindowTitle("Hanoi Game (Server)");
             else if (is_server == 2)
                 SetWindowTitle("Hanoi Game (Client)");
@@ -216,7 +251,7 @@ void handle_input() {
         } else { // 第二次选择
             if (selected_tower != tower_index) 
             { // 不能选择同一个塔
-                if (move_block(selected_tower, tower_index))
+                if (move_block(selected_tower, tower_index, 0))
                     count++;
             }
             // 重置选择状态
@@ -224,11 +259,30 @@ void handle_input() {
             selection_state = 0;
         }
     }
+    if (key >= KEY_ONE && key <= KEY_THREE && game_running) 
+    {
+        int tower_index = key - KEY_ONE; // 转换为0-2
+        
+        if (selection_state2 == 0) 
+        { // 第一次选择
+            selected_tower2 = tower_index;
+            selection_state2 = 1;
+        } else { // 第二次选择
+            if (selected_tower2 != tower_index) 
+            { // 不能选择同一个塔
+                if (move_block(selected_tower2, tower_index, 1))
+                    count2++;
+            }
+            // 重置选择状态
+            selected_tower2 = -1;
+            selection_state2 = 0;
+        }
+    }
     if (game_running == 0)
     {
-        if (key == KEY_R && is_server == 1) 
+        if (key == KEY_R &&(is_server == 1 || is_server == 0))
         {
-            if (is_multiplayer)
+            if (is_multiplayer &&is_server != 0)
             {
                 game_restart = 1;
                 while (!game_restart_send);
@@ -257,7 +311,7 @@ void game_start()
     bool textBoxEditMode = false;
     bool valueBoxEditMode = false;
     unsigned char *fontFileData = LoadFileData("c:\\windows\\fonts\\simhei.ttf",&fileSize);
-    char text[] = "单人多人设置层数开始游戏地址服务器客户端口号： 0123456789IP";
+    char text[] = "单人多人本地联机设置层数开始游戏地址服务器客户端口号： 0123456789IP";
     int codepointsCount;
     int *codepoints=LoadCodepoints(text,&codepointsCount);
     Font font = LoadFontFromMemory(".ttf",fontFileData,fileSize,32,codepoints,codepointsCount);
@@ -281,30 +335,45 @@ void game_start()
         }
         if (is_multiplayer)
         {
-            DrawRectangleRounded(Rectangle{150, 230, 130, 40}, 0.5f, 20, is_server==1? GREEN : LIGHTGRAY);
-            DrawRectangleRounded(Rectangle{360, 230, 130, 40}, 0.5f, 20, is_server==2? GREEN : LIGHTGRAY);
-            DrawTextEx(font,"服务器",Vector2{165,235},32,0,BLACK);
-            DrawTextEx(font,"客户端",Vector2{375,235},32,0,BLACK);
-            if (is_server==1)
+            DrawRectangleRounded(Rectangle{150, 230, 130, 40}, 0.5f, 20, is_server==0? GREEN : LIGHTGRAY);
+            DrawRectangleRounded(Rectangle{390, 230, 130, 40}, 0.5f, 20, is_server!=0? GREEN : LIGHTGRAY);
+            DrawTextEx(font,"本地",Vector2{168,235},32,0,BLACK);
+            DrawTextEx(font,"联机",Vector2{408,235},32,0,BLACK);
+            if (is_server == 0)
             {
                 DrawTextEx(font,"设置层数：",Vector2{100,150},32,0,BLACK);
                 if (GuiSpinner((Rectangle){ 250, 150, 100, 40 }, NULL, &layer, 1, 9, spinnerEditMode)) {
                     spinnerEditMode = !spinnerEditMode;
                 }
-                DrawTextEx(font,"端口号：",Vector2{100,330},32,0,BLACK);
-                if (GuiValueBox((Rectangle){ 230, 330, 130, 40 }, NULL, &port, 1,65535, valueBoxEditMode)) {
+            }
+            else if (is_server == 1)
+            {
+                DrawRectangleRounded(Rectangle{150, 310, 130, 40}, 0.5f, 20, is_server==1? GREEN : LIGHTGRAY);
+                DrawRectangleRounded(Rectangle{360, 310, 130, 40}, 0.5f, 20, is_server==2? GREEN : LIGHTGRAY);
+                DrawTextEx(font,"服务器",Vector2{165,315},32,0,BLACK);
+                DrawTextEx(font,"客户端",Vector2{375,315},32,0,BLACK);
+                DrawTextEx(font,"设置层数：",Vector2{100,150},32,0,BLACK);
+                if (GuiSpinner((Rectangle){ 250, 150, 100, 40 }, NULL, &layer, 1, 9, spinnerEditMode)) {
+                    spinnerEditMode = !spinnerEditMode;
+                }
+                DrawTextEx(font,"端口号：",Vector2{100,410},32,0,BLACK);
+                if (GuiValueBox((Rectangle){ 230, 410, 130, 40 }, NULL, &port, 1,65535, valueBoxEditMode)) {
                     valueBoxEditMode = !valueBoxEditMode;
                 }
             }
-            else if(is_server==2)
+            else if (is_server == 2)
             {
-                DrawTextEx(font,"IP地址：",Vector2{100,330},32,0,BLACK);
-                if (GuiTextBox((Rectangle){ 230, 330, 270, 40 }, textBoxText, 16, textBoxEditMode)) {
+                DrawRectangleRounded(Rectangle{150, 310, 130, 40}, 0.5f, 20, is_server==1? GREEN : LIGHTGRAY);
+                DrawRectangleRounded(Rectangle{360, 310, 130, 40}, 0.5f, 20, is_server==2? GREEN : LIGHTGRAY);
+                DrawTextEx(font,"服务器",Vector2{165,315},32,0,BLACK);
+                DrawTextEx(font,"客户端",Vector2{375,315},32,0,BLACK);
+                DrawTextEx(font,"IP地址：",Vector2{100,410},32,0,BLACK);
+                if (GuiTextBox((Rectangle){ 230, 410, 270, 40 }, textBoxText, 16, textBoxEditMode)) {
                     textBoxEditMode = !textBoxEditMode;
                     if(!textBoxEditMode)validate_ipv4(textBoxText);
                 }
-                DrawTextEx(font,"端口号：",Vector2{100,430},32,0,BLACK);
-                if (GuiValueBox((Rectangle){ 230, 430, 130, 40 }, NULL, &port, 1,65535, valueBoxEditMode)) {
+                DrawTextEx(font,"端口号：",Vector2{100,510},32,0,BLACK);
+                if (GuiValueBox((Rectangle){ 230, 510, 130, 40 }, NULL, &port, 1,65535, valueBoxEditMode)) {
                     valueBoxEditMode = !valueBoxEditMode;
                 }
             }
@@ -316,11 +385,11 @@ void game_start()
         Vector2 mousePoint = GetMousePosition();
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
-            if (mousePoint.x >= 150 && mousePoint.x <= 250 && mousePoint.y >= 50 && mousePoint.y <= 100)
+            if (mousePoint.x >= 150 && mousePoint.x <= 250 && mousePoint.y >= 50 && mousePoint.y <= 100)//单人
                 is_multiplayer = 0;
-            else if (mousePoint.x >= 390 && mousePoint.x <= 490 && mousePoint.y >= 50 && mousePoint.y <= 100)
+            else if (mousePoint.x >= 390 && mousePoint.x <= 490 && mousePoint.y >= 50 && mousePoint.y <= 100)//多人
                 is_multiplayer = 1;
-            else if (mousePoint.x >= 220 && mousePoint.x <= 420 && mousePoint.y >= 600 && mousePoint.y <= 650)
+            else if (mousePoint.x >= 220 && mousePoint.x <= 420 && mousePoint.y >= 600 && mousePoint.y <= 650)//开始游戏
             {
                 UnloadFont(font);
                 UnloadFileData(fontFileData);
@@ -328,12 +397,18 @@ void game_start()
             }
             if (is_multiplayer)
             {
-                if (mousePoint.x >= 150 && mousePoint.x <= 280 && mousePoint.y >= 230 && mousePoint.y <= 270)
+                if (mousePoint.x >= 150 && mousePoint.x <= 280 && mousePoint.y >= 230 && mousePoint.y <= 270)//本地
+                    is_server = 0;
+                else if (mousePoint.x >= 390 && mousePoint.x <= 520 && mousePoint.y >= 230 && mousePoint.y <= 270)//联机
                     is_server = 1;
-                else if (mousePoint.x >= 360 && mousePoint.x <= 490 && mousePoint.y >= 230 && mousePoint.y <= 270)
-                    is_server = 2;
-            }
-            
+                if (is_server == 1 || is_server == 2)
+                {
+                    if (mousePoint.x >= 150 && mousePoint.x <= 280 && mousePoint.y >= 310 && mousePoint.y <= 350)//服务器
+                        is_server = 1;
+                    else if (mousePoint.x >= 360 && mousePoint.x <= 490 && mousePoint.y >= 310 && mousePoint.y <= 350)//客户端
+                        is_server = 2;   
+                }
+            } 
         }        
     }
     UnloadFont(font);
