@@ -18,6 +18,7 @@ void init_tower(int layer)
     selected_tower2 = -1;
     game_won = 0;
     selection_state = 0;
+    selection_state2 = 0;
     game_running = 0;
     game_restart = 0;
     self[0] = 0;
@@ -42,25 +43,50 @@ void init_tower(int layer)
 }
 
 // 移动方块
-bool move_block(int a,int b)
+//`tower`:0-自己,1-对方
+bool move_block(int a,int b,int tower)
 {
     if(a<0||a>2||b<0||b>2) return false;
-    else if(self_tower[a].empty()) return false;
-    else if(self_tower[b].empty())
+    if (tower == 0)
     {
-        self_tower[b].push_front(self_tower[a].front());
-        self_tower[a].pop_front();
-        if(b>0)self[b==1?0:1]=self_tower[b].size();
-        return true;
+        if(self_tower[a].empty()) return false;
+        else if(self_tower[b].empty())
+        {
+            self_tower[b].push_front(self_tower[a].front());
+            self_tower[a].pop_front();
+            if(b>0)self[b==1?0:1]=self_tower[b].size();
+            return true;
+        }
+        else if(self_tower[a].front()<self_tower[b].front())
+        {
+            self_tower[b].push_front(self_tower[a].front());
+            self_tower[a].pop_front();
+            if(b>0)self[b==1?0:1]=self_tower[b].size();
+            return true;		
+        }
+        else
+            return false;
     }
-    else if(self_tower[a].front()<self_tower[b].front())
+    else if (tower == 1)
     {
-        self_tower[b].push_front(self_tower[a].front());
-        self_tower[a].pop_front();
-        if(b>0)self[b==1?0:1]=self_tower[b].size();
-        return true;		
+        if(other_tower[a].empty()) return false;
+        else if(other_tower[b].empty())
+        {
+            other_tower[b].push_front(other_tower[a].front());
+            other_tower[a].pop_front();
+            if(b>0)other[b==1?0:1]=other_tower[b].size();
+            return true;
+        }
+        else if(other_tower[a].front()<other_tower[b].front())
+        {
+            other_tower[b].push_front(other_tower[a].front());
+            other_tower[a].pop_front();
+            if(b>0)other[b==1?0:1]=other_tower[b].size();
+            return true;		
+        }
+        else
+            return false;
     }
-    else
     return false;
 }
 
@@ -165,7 +191,14 @@ void print_tower()
     {
         if (is_multiplayer)
         {
-            if (is_server == 1) 
+            if (is_server == 0) 
+            {
+                if (game_won == 1)
+                    SetWindowTitle("Hanoi Game - Game Over! Press R to Restart");
+                else if (game_won == 2) 
+                    SetWindowTitle("Hanoi Game - Game Over! Press R to Restart");
+            }
+            else if (is_server == 1) 
             {
                 if (game_won == 1)
                     SetWindowTitle("Hanoi Game (Server) - You Win! Press R to Restart");
@@ -188,6 +221,8 @@ void print_tower()
         if (is_multiplayer)
         {
             if (is_server == 1) 
+                SetWindowTitle("Hanoi Game");
+            else if (is_server == 1) 
                 SetWindowTitle("Hanoi Game (Server)");
             else if (is_server == 2)
                 SetWindowTitle("Hanoi Game (Client)");
@@ -222,6 +257,25 @@ void handle_input() {
             // 重置选择状态
             selected_tower = -1;
             selection_state = 0;
+        }
+    }
+    if (key >= KEY_ONE && key <= KEY_THREE && game_running) 
+    {
+        int tower_index = key - KEY_ONE; // 转换为0-2
+        
+        if (selection_state2 == 0) 
+        { // 第一次选择
+            selected_tower2 = tower_index;
+            selection_state2 = 1;
+        } else { // 第二次选择
+            if (selected_tower2 != tower_index) 
+            { // 不能选择同一个塔
+                if (move_block(selected_tower2, tower_index))
+                    count2++;
+            }
+            // 重置选择状态
+            selected_tower2 = -1;
+            selection_state2 = 0;
         }
     }
     if (game_running == 0)

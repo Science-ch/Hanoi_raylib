@@ -23,6 +23,7 @@ extern bool game_restart;                        // 游戏是否重启
 extern bool game_restart_send;                   // 游戏重启信号已发送
 extern int is_server;                            // 是否为服务端
 extern int selection_state;                      // 选择状态
+extern int selection_state2;                     // 对方选择状态
 extern int count;                                // 计步器
 extern int count2;                               // 对方计步器
 extern double time_count;                        // 计时器

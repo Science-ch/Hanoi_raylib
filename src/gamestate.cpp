@@ -23,4 +23,5 @@ double time_mark = 0;                     // 计时标记
 double time_mark2 = 0;                    // 计时标记2
 bool first_press = 0;                     // 是否首次按键
 int selection_state = 0;                  // 选择状态
+int selection_state2 = 0;                  // 对方选择状态
 std::mutex mtx;   
