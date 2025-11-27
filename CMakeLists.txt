@@ -24,13 +24,9 @@ target_link_libraries(Hanoi PRIVATE
   winmm gdi32 opengl32 ws2_32
 )
 
-set_target_properties(Hanoi PROPERTIES
-  WIN32_EXECUTABLE FALSE
-)
-
 if(WIN32)
   set_target_properties(Hanoi PROPERTIES
-    WIN32_EXECUTABLE FALSE
+    WIN32_EXECUTABLE YES
     LINK_FLAGS "-static"
   )
 endif()

@@ -3,7 +3,6 @@
 
 int server();
 int client();
-void close_cmd();
 void win();
 
 #endif // NETWORK_H

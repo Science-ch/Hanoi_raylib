@@ -258,15 +258,6 @@ int client()
 	return 0; 
 }
 
-void close_cmd()
-{
-    HWND hConsole = GetConsoleWindow();
-    if (hConsole != NULL)
-    {
-        ShowWindow(hConsole, SW_HIDE);
-    }
-}
-
 // 游戏胜利处理
 void win()
 {

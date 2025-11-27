@@ -9,7 +9,6 @@
 using namespace std;
 int main(void)
 {
-	close_cmd();
 	game_start();
     if(!is_multiplayer)
 	{
