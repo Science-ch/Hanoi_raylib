@@ -49,8 +49,8 @@ int server()
 	send_buf=(char*)malloc((size_t)layer+9);
 	recv_buf=(char*)malloc((size_t)layer+9);
 	int recv_len=0,send_len=0;
-	recv_len=recv(clientfd,recv_buf,5,0);
-	if(strlen(recv_buf)<=0)
+	recv_len=recv(clientfd,recv_buf,1,0);
+	if(recv_len<=0)
 	{
 		cout<<"¶Ï¿ªÁ¬½Ó"<<endl;
 		closesocket(sockfd);
@@ -69,7 +69,6 @@ int server()
 		goto b;
 	}
 	connected=1;
-	int j,k;
 	while(1)
 	{
 		recv_len=recv(clientfd,recv_buf,layer+8,0);
@@ -87,33 +86,21 @@ int server()
 			cout<<"recv bytes:"<<recv_len<<endl;
 		#endif
         mtx.lock();
-        other_tower[0].clear();
-        other_tower[1].clear();
-        other_tower[2].clear();
-		j=3;
-		for(int i=0;i<recv_buf[0];i++)
+		for (int i = 0, j = 3; i < 3; i++)
 		{
-            other_tower[0].push_back((int)recv_buf[j]);
-            j++;			
+			other_tower[i].clear();
+			for (int k = 0; k < recv_buf[i]; k++)
+			{
+				other_tower[i].push_back((int)recv_buf[j]);
+				j++;			
+			}
 		}
-        for(int i=0;i<recv_buf[1];i++)
-        {
-            other_tower[1].push_back((int)recv_buf[j]);
-            j++;			
-        }
-        for(int i=0;i<recv_buf[2];i++)
-        {
-            other_tower[2].push_back((int)recv_buf[j]);
-            j++;			
-        }
 		selected_tower2=(int)recv_buf[layer+3];
 		count2=*(int*)(recv_buf+layer+4);
 		mtx.unlock();
-		for(int i=0;i<3;i++)
-            send_buf[i] = (char)self_tower[i].size();
-        j=3;
-		for(int i=0;i<3;i++)
+		for(int i=0,j=3;i<3;i++)
 		{
+			send_buf[i] = (char)self_tower[i].size();
             for (int dat : self_tower[i])
             {
                 send_buf[j] = (char)dat;
@@ -181,26 +168,22 @@ int client()
 	send_buf=(char*)malloc((size_t)layer+9);
 	recv_buf=(char*)malloc((size_t)layer+9);
 	connected=1;
-	int j;
 	while(1)
 	{
 		strcpy(recv_buf,"");
 		Sleep(50);
 		mtx.lock();
-		for(int i=0;i<3;i++)
-			send_buf[i]=(char)self_tower[i].size();
-		j=3;
-		for(int i=0;i<3;i++)
+		for(int i=0,j=3;i<3;i++)
 		{
+			send_buf[i]=(char)self_tower[i].size();
             for (int dat : self_tower[i])
             {
                 send_buf[j] = (char)dat;
                 j++;
             }
 		}
-		j=layer+3;
-		send_buf[j]=(char)selected_tower;
-		*(int*)(send_buf+j+1) = count;
+		send_buf[layer+3]=(char)selected_tower;
+		*(int*)(send_buf+layer+4) = count;
 		mtx.unlock();
 		send_len=send(sockfd,send_buf,layer+8,0);
 		#ifdef DEBUG_MODE
@@ -229,25 +212,15 @@ int client()
 			cout<<"recv bytes:"<<recv_len<<endl;
 		#endif
         mtx.lock();
-        other_tower[0].clear();
-        other_tower[1].clear();
-        other_tower[2].clear();
-		j=3;
-		for(int i=0;i<recv_buf[0];i++)
+        for (int i = 0, j = 3; i < 3; i++)
 		{
-            other_tower[0].push_back((int)recv_buf[j]);
-            j++;			
+			other_tower[i].clear();
+			for (int k = 0; k < recv_buf[i]; k++)
+			{
+				other_tower[i].push_back((int)recv_buf[j]);
+				j++;			
+			}
 		}
-        for(int i=0;i<recv_buf[1];i++)
-        {
-            other_tower[1].push_back((int)recv_buf[j]);
-            j++;			
-        }
-        for(int i=0;i<recv_buf[2];i++)
-        {
-            other_tower[2].push_back((int)recv_buf[j]);
-            j++;			
-        }
 		selected_tower2=(int)recv_buf[layer+3];
 		game_restart=(bool)recv_buf[layer+4];
 		count2=*(int*)(recv_buf+layer+5);

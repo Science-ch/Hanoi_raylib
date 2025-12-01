@@ -146,9 +146,9 @@ void print_tower()
                 DrawText(num_str, 85 + i * 200 + 700, 425 - n * 30, 20, DARKGREEN);
                 n++;
             }
-            sprintf( str, "Step:%4d", count2);
-            DrawText( str, 230 + 700, 680, 32, GRAY);
         }
+        sprintf( str, "Step:%4d", count2);
+        DrawText( str, 230 + 700, 680, 32, GRAY);
     }
     
     // 绘制选中的塔的标记
@@ -170,10 +170,10 @@ void print_tower()
         }
         DrawRectangleLines(715 + selected_tower2 * 200, 100, 150, 350, RED);
     }
-    
+
     // 绘制胜利文本
     if (game_won)
-     {
+    {
         DrawText("Finish!", 230 + 700 * (game_won == 1 ? 0 : 1), 600, 40, PURPLE);
     }
 
@@ -220,7 +220,7 @@ void print_tower()
     {
         if (is_multiplayer)
         {
-            if (is_server == 1) 
+            if (is_server == 0) 
                 SetWindowTitle("Hanoi Game");
             else if (is_server == 1) 
                 SetWindowTitle("Hanoi Game (Server)");
@@ -259,7 +259,7 @@ void handle_input() {
             selection_state = 0;
         }
     }
-    if (key >= KEY_ONE && key <= KEY_THREE && game_running) 
+    if (key >= KEY_ONE && key <= KEY_THREE && game_running && is_multiplayer && is_server == 0) 
     {
         int tower_index = key - KEY_ONE; // 转换为0-2
         
